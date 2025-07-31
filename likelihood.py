@@ -61,6 +61,7 @@ def likelihood_single_fast_optimized(
 
     logMh_grid = np.linspace(mu0 - 4*sigma, mu0 + 4*sigma, gridN)
     logalpha_grid = np.linspace(mu_alpha - 4*sigma_alpha, mu_alpha + 4*sigma_alpha, gridN)
+    p_logalpha_arr = norm.pdf(logalpha_grid, loc=mu_alpha, scale=sigma_alpha)
     Z = np.zeros((gridN, gridN))
 
     for i, logMh in enumerate(logMh_grid):
@@ -84,14 +85,12 @@ def likelihood_single_fast_optimized(
         except:
             continue
 
-        for j, logalpha in enumerate(logalpha_grid):
-            p_Mstar = norm.pdf(logM_sps_obs, loc=logM_star - logalpha, scale=0.1)
-            mu_DM_i = mu0 + beta * (logM_star - 11.4) + \
-                xi * (logRe_obs - logRe_of_logMsps(logM_star))
-            p_logMh = norm.pdf(logMh, loc=mu_DM_i, scale=sigma)
-            p_logalpha = norm.pdf(logalpha, loc=mu_alpha, scale=sigma_alpha)
+        mu_DM_i = mu0 + beta * (logM_star - 11.4) + \
+            xi * (logRe_obs - logRe_of_logMsps(logM_star))
+        p_logMh = norm.pdf(logMh, loc=mu_DM_i, scale=sigma)
+        p_Mstar_arr = norm.pdf(logM_sps_obs, loc=logM_star - logalpha_grid, scale=0.1)
 
-            Z[i, j] = p_Mstar * p_logMh * p_logalpha * detJ * selA * selB * p_magA * p_magB
+        Z[i, :] = p_Mstar_arr * p_logMh * p_logalpha_arr * detJ * selA * selB * p_magA * p_magB
 
     integral = np.trapz(np.trapz(Z, logalpha_grid, axis=1), logMh_grid)
     return max(integral, 1e-300)
