@@ -3,7 +3,6 @@ from .sl_cosmology import Dang, G, M_Sun, Mpc, c, rhoc, yr
 from .sl_profiles import deVaucouleurs as deV, nfw
 from scipy.interpolate import interp1d, splev, splint, splrep
 from scipy.optimize import brentq, leastsq, minimize_scalar
-from scipy.integrate import quad
 
 
 class LensModel:
@@ -81,8 +80,7 @@ class LensModel:
 
     def gamma(self, x):
         R = abs(x)
-        integrand = lambda r: self.kappa(r) * r
-        integral, _ = quad(integrand, 0, R, epsabs=1e-8, epsrel=1e-8)
+        integral = splint(0.0, R, self.kappaR_spline)
         mean_kappa = 2 * integral / R**2
         return mean_kappa - self.kappa(R)
 
