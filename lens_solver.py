@@ -1,5 +1,4 @@
 from .lens_model import LensModel
-from scipy.interpolate import splrep, splint
 from .sl_cosmology import Dang, Mpc, c, G, M_Sun, rhoc
 import numpy as np
 from .sl_profiles import nfw, deVaucouleurs as deV
@@ -34,18 +33,13 @@ def solve_lens_parameters_from_obs(xA_obs, xB_obs, logRe_obs, logM_halo, zl, zs)
     rhoc_z = rhoc(zl)  # [Msun / Mpc^3]
     r200 = (M_halo * 3./(4*np.pi*200*rhoc_z))**(1./3.) * 1000.  # [kpc]
     nfw_norm = M_halo / nfw.M3d(r200, rs)
-    R2d = np.logspace(-3, 2, 1001)  # [R/Re] 无单位
-    Rkpc = R2d * rs  # [kpc]
-    Sigma = nfw_norm * nfw.Sigma(Rkpc, rs)  # [Msun / kpc^2]
-    # sigma_spline = splrep(Rkpc, Sigma)  # Sigma(R)
-    sigmaR_spline = splrep(Rkpc, Sigma * Rkpc)  # Sigma(R) * R
 
     def alpha_star_unit(x):
         m2d_star =  deV.fast_M2d(abs(x)/Re)        # [Msun]
         return m2d_star / (np.pi * x * s_cr) 
     
     def alpha_halo(x):
-        m2d_halo = 2*np.pi * splint(0., abs(x), sigmaR_spline)
+        m2d_halo = nfw_norm * nfw.M2d(abs(x), rs)
         return m2d_halo / (np.pi * x * s_cr)
 
     M_star_solved = ((xA_obs -xB_obs) + alpha_halo(xB_obs)-alpha_halo(xA_obs))/ (alpha_star_unit(xA_obs) - alpha_star_unit(xB_obs))  # [Msun]
